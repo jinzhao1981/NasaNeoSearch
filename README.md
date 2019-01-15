@@ -1,9 +1,10 @@
 # NasaNeoSearch
 NasaNeoSearch is a program that uses Nasa Neo ws api to search the cloest and largest Neo.
 
-#How to build?
+# How to build?
 
 git clone https://github.com/jinzhao1981/NasaNeoSearch.git
+
 gradle buildJar
 
 A jar file will be generated at build/libs/NeoSearchApp.jar
