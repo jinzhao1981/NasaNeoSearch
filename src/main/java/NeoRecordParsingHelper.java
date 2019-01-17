@@ -18,7 +18,10 @@ import org.apache.log4j.Logger;
 * 
 */
 public class NeoRecordParsingHelper {
-	  final static Logger logger = Logger.getLogger(NeoRecordParsingHelper.class);
+      private NeoRecordParsingHelper() {
+        throw new IllegalStateException("Utility class");
+      }
+	  public static final Logger logger = Logger.getLogger(NeoRecordParsingHelper.class);
 	  static void handleParsingError(String s) {
 		 	  logger.info("Parsing error, Stopped");
 			  logger.debug(s);
@@ -34,28 +37,25 @@ public class NeoRecordParsingHelper {
 			  int endIndex = json.indexOf('}', beginIndex);
 			  String s = json.substring(beginIndex, endIndex+1);
 			  
-			  JsonReader jsonReader = Json.createReader(new StringReader(s));
-			  JsonObject jobj = jsonReader.readObject(); 
-			  if(jobj.containsKey("next")) {
-				  return jobj.getString("next");
-			  }
-			  else {
-				  return null;
+			  try(JsonReader jsonReader = Json.createReader(new StringReader(s))){
+    			  JsonObject jobj = jsonReader.readObject(); 
+    			  if(jobj.containsKey("next")) {
+    				  return jobj.getString("next");
+    			  }
+    			  else {
+    				  return null;
+    			  }
 			  }
 		  }
-		  catch(JsonParsingException e) {
+		  catch(JsonParsingException|NullPointerException e) {
 			  handleParsingError(e.toString());
 		      return null;
 		  }
-		  catch(NullPointerException e) {
-			  handleParsingError(e.toString());
-			  return null;
-		  }
 	  }
 	  public static Optional<NeoResult> findCloestNeo(JsonArray ja ) {
-			Optional<NeoResult> neoDistanceResult = ja.stream().map(p->{
+			return ja.stream().map(p->{
 				try {
-				String ref_id = ((JsonObject)p).getString("neo_reference_id");
+				String refId = ((JsonObject)p).getString("neo_reference_id");
 				String name = ((JsonObject)p).getString("name");
 				JsonArray approachData = ((JsonObject)p).getJsonArray("close_approach_data");
 				Optional<BigDecimal> distance = approachData.parallelStream().map(data->{
@@ -68,29 +68,24 @@ public class NeoRecordParsingHelper {
 						return new BigDecimal(Integer.MAX_VALUE);
 					}).collect(Collectors.minBy(Comparator.naturalOrder()));
 				BigDecimal d = distance.isPresent()?distance.get():new BigDecimal(Integer.MAX_VALUE);
-				return new NeoResult(NeoResult_Type.Distance, d, ref_id,name);
+				return new NeoResult(NeoResult_Type.Distance, d, refId,name);
 				}
-				catch(NullPointerException e) {
+				catch(NullPointerException|NumberFormatException e) {
 					logger.debug(e.toString());
 					return new NeoResult(NeoResult_Type.Distance, new BigDecimal(Integer.MAX_VALUE),"","");
 				}
-				catch(NumberFormatException e ) {
-					logger.debug(e.toString());
-					return new NeoResult(NeoResult_Type.Distance, new BigDecimal(Integer.MAX_VALUE),"","");
-				}
-			
 			}).collect(Collectors.minBy(Comparator.comparing(NeoResult::getValue)));
-			return neoDistanceResult;
+			
 	  }
 	  public static Optional<NeoResult> findLargestNeo(JsonArray ja) {
 		  	
-			Optional<NeoResult> neoSizeResult = ja.stream().map(p->{
+			return ja.stream().map(p->{
 				try {
 					String name = ((JsonObject)p).getString("name");
 					BigDecimal min = ((JsonObject)p).getJsonObject("estimated_diameter").getJsonObject("miles").getJsonNumber("estimated_diameter_min").bigDecimalValue();
 					BigDecimal max = ((JsonObject)p).getJsonObject("estimated_diameter").getJsonObject("miles").getJsonNumber("estimated_diameter_max").bigDecimalValue();
-					String ref_id = ((JsonObject)p).getString("neo_reference_id");
-					return new NeoResult(NeoResult_Type.Size, min.add(max), ref_id,name);
+					String refId = ((JsonObject)p).getString("neo_reference_id");
+					return new NeoResult(NeoResult_Type.Size, min.add(max), refId,name);
 				}
 				catch(NullPointerException e) {
 					logger.debug(e.toString());
@@ -98,7 +93,7 @@ public class NeoRecordParsingHelper {
 				}
 				
 			}).collect(Collectors.maxBy(Comparator.comparing(NeoResult::getValue)));
-			return neoSizeResult;
+			
 	  }
 }
 

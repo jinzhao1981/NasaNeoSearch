@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.BlockingQueue;
 import org.apache.log4j.Logger;
@@ -19,11 +18,7 @@ class NeoRecordTestFetcher implements NeoRecordFetcher{
 		 return testData.getInstance().getData();
 	}
     public Runnable makeWorker(BlockingQueue<Command> q, String payload) {
-		return new Runnable() {
-			@Override public void run() {
-				new NeoSearchWorker(new NeoRecordTestFetcher()).process(q,payload);
-			}
-		};
+        return ()->new NeoSearchWorker(new NeoRecordTestFetcher()).process(q,payload);
 	}
 }
 /**
@@ -33,13 +28,9 @@ class NeoRecordTestFetcher implements NeoRecordFetcher{
 *
 */
 class NeoRecordNasaFetcher implements NeoRecordFetcher{
-	final static Logger logger = Logger.getLogger(NeoRecordNasaFetcher.class);
+	static final Logger logger = Logger.getLogger(NeoRecordNasaFetcher.class);
 	public Runnable makeWorker(BlockingQueue<Command> q, String payload) {
-		return new Runnable() {
-			@Override public void run() {
-				new NeoSearchWorker(new NeoRecordNasaFetcher()).process(q,payload);
-			}
-		};
+	    return ()->new NeoSearchWorker(new NeoRecordNasaFetcher()).process(q,payload);
 	}
 	public String fetchNeoRecord(String strUrl) {
 		  try {
@@ -65,11 +56,9 @@ class NeoRecordNasaFetcher implements NeoRecordFetcher{
 		        conn.disconnect();
 	                      
 		        return sb.toString();
-		  } catch (MalformedURLException e) {
-			  	logger.debug(e.toString());
 		  } catch (IOException e) {
-			    logger.debug(e.toString());
-		  }
+			  	logger.debug(e.toString());
+		  } 
 		  return "";
 	}
 }

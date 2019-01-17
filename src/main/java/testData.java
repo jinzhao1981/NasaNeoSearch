@@ -4,19 +4,15 @@ import java.util.Collections;
 import java.util.List;
 
 public class testData {
-	private List<String> testJson = new ArrayList<String>();
+	private List<String> testJson = new ArrayList<>();
 	private int index =0;
-	public static testData instance=null;
+	private static testData instance=null;
 	
-	public static testData getInstance() {
-		if(instance ==null) {
-            synchronized (testData.class) {
-                if (instance == null) {
-                    instance = new testData();
-                }
-            }
-		}
-		return instance;
+	public static synchronized testData getInstance() {
+		if (instance == null) {
+            instance = new testData();
+        }
+        return instance;
 	}
 	
 	public void init() {

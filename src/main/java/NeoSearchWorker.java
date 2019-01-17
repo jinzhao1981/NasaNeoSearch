@@ -18,7 +18,7 @@ import java.util.concurrent.BlockingQueue;
 */
 public class NeoSearchWorker {
 	 private NeoRecordFetcher fetcher;
-	 final static Logger logger = Logger.getLogger(NeoSearchWorker.class);
+	 static final Logger logger = Logger.getLogger(NeoSearchWorker.class);
 
 	 public NeoSearchWorker(NeoRecordFetcher f){
 		 fetcher = f;
@@ -53,12 +53,12 @@ public class NeoSearchWorker {
 	    }
 	    catch (InterruptedException e) {
 	    	logger.debug(e.toString());
+	    	Thread.currentThread().interrupt();
 	    }
 	  }
 	  private void processRecord(String record) {
 	     
-		  try {
-			JsonReader jsonReader = Json.createReader(new StringReader(record));
+		  try(JsonReader jsonReader = Json.createReader(new StringReader(record))){
 			JsonObject jobj = jsonReader.readObject();        
 			
 			JsonArray ja = jobj.getJsonArray("near_earth_objects");
@@ -73,8 +73,6 @@ public class NeoSearchWorker {
 			if(neoDistanceResult.isPresent()) {
 				nr = neoDistanceResult.get();
 				NeoSearchResultSingleton.getInstance().processNeo(nr);
-				System.out.println("sending Distance record");
-						
 			}
 			
 			if(neoSizeResult.isPresent()) {
@@ -90,12 +88,12 @@ public class NeoSearchWorker {
 		  }
 		  catch(InterruptedException e) {
 			  logger.debug(e.toString());
+			  Thread.currentThread().interrupt();
 		  }
-		  catch(NullPointerException e) {
+		  catch(NullPointerException|JsonParsingException e) {
+		      //ignore parsing error and continue processing next one
 			  logger.debug(e.toString());
 		  }
-		  catch(JsonParsingException e) {
-			  logger.debug(e.toString());
-		  }
+		  
 	  }
 }

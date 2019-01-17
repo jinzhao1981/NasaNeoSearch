@@ -10,11 +10,11 @@ public class NeoSearchApp {
 				isTesting = true;
 				break;
 			}
-	         if(s.length()==2&&s.charAt(0)=='-'&&s.charAt(1)=='k') {
-	                if(i+1<args.length)
-	                    key=args[i+1];
-	                break;
-	            }
+	        if(s.length()==2&&s.charAt(0)=='-'&&s.charAt(1)=='k') {
+	            if(i+1<args.length)
+	                key=args[i+1];
+	            break;
+	        }
 		}
 		if(isTesting) {
 			testData.getInstance().init();
@@ -24,7 +24,7 @@ public class NeoSearchApp {
 			run(new NeoRecordNasaFetcher(), key);
 		}
 	}
-	final static Logger logger = Logger.getLogger(NeoSearchApp.class);
+	static final Logger logger = Logger.getLogger(NeoSearchApp.class);
 	public static void run(NeoRecordFetcher fetchStrategy, String key) {
 		try {
 			logger.debug("NeoSearchApp started ...");
@@ -37,6 +37,7 @@ public class NeoSearchApp {
 		}
 		catch(InterruptedException e) {
 			logger.debug(e.toString());
+			Thread.currentThread().interrupt();
 		}
 	}
 }

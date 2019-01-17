@@ -48,7 +48,7 @@ class ScheduleResult{
 public class NeoSearchScheduler implements Runnable{
 	  private final NeoRecordFetcher processor;
 	  private final String key;
-	  final static Logger logger = Logger.getLogger(NeoSearchScheduler.class);
+	  static final Logger logger = Logger.getLogger(NeoSearchScheduler.class);
 	  
 	  private int retryTime = initialRetryTime;
 	  private static final int maxRetryTime = 900000;
@@ -85,6 +85,7 @@ public class NeoSearchScheduler implements Runnable{
 			    Thread.sleep(retryTime);
 			} catch (InterruptedException e) {
 			    logger.debug(e.toString());
+			    Thread.currentThread().interrupt();
 			}
 			if(probe()) {
 			    logger.debug("probe succeed");
@@ -103,12 +104,13 @@ public class NeoSearchScheduler implements Runnable{
 	  public void run() {
 		  
 	      logger.debug("Start Scheduler " + Thread.currentThread().getName());
-		  BlockingQueue<Command> urlQueue = new ArrayBlockingQueue<Command> (100);
+		  BlockingQueue<Command> urlQueue = new ArrayBlockingQueue<> (100);
 		  String str = "https://api.nasa.gov/neo/rest/v1/neo/browse?api_key="+key;
 		  try {
 		      urlQueue.put(new Command(str));
 		  } catch (InterruptedException e1) {
 		      logger.debug(e1.toString());
+		      Thread.currentThread().interrupt();
 		  }
 		  ExecutorService executor = Executors.newFixedThreadPool(3);
 		  while(true) {
@@ -130,6 +132,7 @@ public class NeoSearchScheduler implements Runnable{
 	          }
 	          catch(InterruptedException e) {
 	              logger.debug(e.toString());
+	              Thread.currentThread().interrupt();
 	          }
 	      }
 	      executor.shutdown();

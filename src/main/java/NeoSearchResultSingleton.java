@@ -37,13 +37,25 @@ class NeoResult {
 		return name;
 	}
 	public String getSizeLogString(String q) {
-		return String.format("Find %s Neo (id:%s, name:%s) with Size (%s miles)\n", q, getRefId(), getName(), getValue().divide(new BigDecimal(2)));
+		return String.format("Find %s Neo (id:%s, name:%s) with Size (%s miles)%n", q, getRefId(), getName(), getValue().divide(new BigDecimal(2)));
 			
 	}
 	public String getDistanceLogString(String q) {
-		return String.format("Find %s Neo (id:%s, name:%s) with Distance (%s miles)\n", q, getRefId(), getName(),getValue());
+		return String.format("Find %s Neo (id:%s, name:%s) with Distance (%s miles)%n", q, getRefId(), getName(),getValue());
   		
 	}
+	public boolean isSizeResult() {
+	    return getType() == NeoResult_Type.Size;
+	}
+	public boolean isDistanceResult() {
+	    return getType() == NeoResult_Type.Distance;
+	}
+	public boolean isLargerThan(BigDecimal v) {
+	    return getValue().compareTo(v)>0;
+	}
+    public boolean isCloserThan(BigDecimal v) {
+        return getValue().compareTo(v)<0;
+    }
 	private NeoResult_Type type;
 	private BigDecimal value;
 	private String refId;
@@ -57,18 +69,14 @@ class NeoResult {
 * 
 */
 public class NeoSearchResultSingleton{
-	final static Logger logger = Logger.getLogger(NeoSearchResultSingleton.class);
+    static final Logger logger = Logger.getLogger(NeoSearchResultSingleton.class);
 		
-	public static NeoSearchResultSingleton instance=null;
+	static NeoSearchResultSingleton instance=null;
 	
-	public static NeoSearchResultSingleton getInstance() {
+	public static synchronized NeoSearchResultSingleton getInstance() {
 		if(instance ==null) {
-            synchronized (testData.class) {
-                if (instance == null) {
-                    instance = new NeoSearchResultSingleton();
-                }
-            }
-		}
+		    instance = new NeoSearchResultSingleton();
+        }
 		return instance;
 	}
 	private NeoResult largestNeo = new NeoResult(NeoResult_Type.Size,new BigDecimal(Integer.MIN_VALUE),"0","");
@@ -83,27 +91,21 @@ public class NeoSearchResultSingleton{
     }
     private NeoResult closestNeo = new NeoResult(NeoResult_Type.Distance,new BigDecimal(Integer.MAX_VALUE),"0","");
 	private NeoResult countNeo = new NeoResult(NeoResult_Type.Count,new BigDecimal(0),"","0");
-	public void processNeo(NeoResult result) {
-		synchronized (NeoSearchResultSingleton.class) {
-		  	if(result.getType()==NeoResult_Type.Size) {
-		  		if(result.getValue().compareTo(largestNeo.getValue())>0) {
-		  			largestNeo = result;
-		  			String log = largestNeo.getSizeLogString("a Larger"); 
-		  			logger.info(log);
-		  		}
-		  	}
-		  	if(result.getType()==NeoResult_Type.Distance) {
-		  		if(result.getValue().compareTo(closestNeo.getValue())<0) {
-		  			closestNeo = result;
-		  			String log = closestNeo.getDistanceLogString("a Closer");
-		  			logger.info(log);
-		  		}
-		  	}
-		  	if(result.getType()==NeoResult_Type.Count) {
-		  		countNeo.setCount(countNeo.getCount().add(result.getCount()));
-		  		countNeo.setTotalCount(result.getTotalCount());
-		  	}
-		}
+	public synchronized void processNeo(NeoResult result) {
+	  	if(result.isSizeResult() && result.isLargerThan(largestNeo.getValue())) {
+	  		largestNeo = result;
+	  		String log = largestNeo.getSizeLogString("a Larger"); 
+	  		logger.info(log);
+	  	}
+	  	if(result.isDistanceResult() && result.isCloserThan(closestNeo.getValue())) {
+	  		closestNeo = result;
+	  		String log = closestNeo.getDistanceLogString("a Closer");
+	  		logger.info(log);
+	  	}
+	  	if(result.getType()==NeoResult_Type.Count) {
+	  		countNeo.setCount(countNeo.getCount().add(result.getCount()));
+	  		countNeo.setTotalCount(result.getTotalCount());
+	  	}
 	}
 	public void printResult() {
 		synchronized (NeoSearchResultSingleton.class) {
